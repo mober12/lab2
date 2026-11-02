@@ -8,10 +8,27 @@ SELECT
     ws.day_of_week,
     ws.start_time,
     ws.end_time,
-    (ws.end_time - ws.start_time) AS open_duration
+    ws.break_start_time,
+    ws.break_end_time,
+
+    (ws.end_time - ws.start_time)
+    - COALESCE(
+        ws.break_end_time - ws.break_start_time,
+        INTERVAL '0 minutes'
+    ) AS actual_work_time
+
 FROM work_schedules ws
-WHERE ws.end_time - ws.start_time > INTERVAL '8 hours'
-ORDER BY ws.post_office_code, ws.day_of_week;
+
+WHERE
+    (ws.end_time - ws.start_time)
+    - COALESCE(
+        ws.break_end_time - ws.break_start_time,
+        INTERVAL '0 minutes'
+    ) > INTERVAL '8 hours'
+
+ORDER BY
+    ws.post_office_code,
+    ws.day_of_week;
 
 -- ------------------------------------------------------------
 -- 2. Выбратьотделы почтовых отделений, которые обслуживают только физических лиц и принимают заказные писма. 
