@@ -60,31 +60,37 @@ ORDER BY post_office_code, day_of_week, department_code;
 -- ------------------------------------------------------------
 -- 4. Добавить в созданую таблицу отделы, названия которых состоят из нескольких слов.
 -- ------------------------------------------------------------
-
-INSERT INTO departments (
-    name,
+INSERT INTO departments_working_more_8_hours (
+    post_office_code,
+    day_of_week,
+    start_time,
+    end_time,
+    break_start_time,
+    break_end_time,
+    department_code,
+    department_name,
     serves_individuals,
     serves_legal_entities,
     department_functions
 )
 SELECT
-    v.name,
-    v.serves_individuals,
-    v.serves_legal_entities,
-    v.department_functions
-FROM (
-    VALUES
-    ('Отделение заказной корреспонденции',
-     TRUE, FALSE, 'Приём и выдача заказных писем'),
-    ('Отдел обслуживания юридических лиц',
-     FALSE, TRUE, 'Обслуживание юридических лиц'),
-    ('Отделение универсального обслуживания',
-     TRUE, TRUE, 'Обслуживание физических и юридических лиц')
-) AS v(name, serves_individuals, serves_legal_entities, department_functions)
-WHERE NOT EXISTS (
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    d.department_code,
+    d.name,
+    d.serves_individuals,
+    d.serves_legal_entities,
+    d.department_functions
+FROM departments d
+WHERE d.name ~ '\s+'
+AND NOT EXISTS (
     SELECT 1
-    FROM departments d
-    WHERE d.name = v.name
+    FROM departments_working_more_8_hours t
+    WHERE t.department_code = d.department_code
 );
 
 -- ------------------------------------------------------------
@@ -112,23 +118,39 @@ WHERE COALESCE(
 -- 7. Посчитать количество отделов, обслуживаюших только юридических лиц,и отделов ,обслуживающх все котогории
 --  в кадый из дней неделию
 -- ------------------------------------------------------------
-
 SELECT
-    ws.post_office_code,
     ws.day_of_week,
-    COUNT(DISTINCT ws.department_code) FILTER (
-        WHERE d.serves_legal_entities IS TRUE
-          AND d.serves_individuals IS FALSE
-    ) AS departments_only_legal_entities,
-    COUNT(DISTINCT ws.department_code) FILTER (
-        WHERE d.serves_legal_entities IS TRUE
-          AND d.serves_individuals IS TRUE
-    ) AS departments_all_client_categories
-FROM work_schedules ws
-JOIN departments d
-  ON d.department_code = ws.department_code
-GROUP BY ws.post_office_code, ws.day_of_week
-ORDER BY ws.post_office_code, ws.day_of_week;
 
-COMMIT;
+    COUNT(DISTINCT ws.department_code) FILTER (
+        WHERE d.serves_legal_entities = TRUE
+          AND d.serves_individuals = FALSE
+    ) AS only_legal_entities,
+
+    COUNT(DISTINCT ws.department_code) FILTER (
+        WHERE d.serves_legal_entities = TRUE
+          AND d.serves_individuals = TRUE
+    ) AS all_client_categories
+
+FROM work_schedules ws
+
+JOIN departments d
+    ON d.department_code = ws.department_code
+
+GROUP BY ws.day_of_week
+
+ORDER BY
+    CASE ws.day_of_week
+        WHEN 'Monday_1' THEN 1
+        WHEN 'Tuesday_1' THEN 2
+        WHEN 'Wednesday_1' THEN 3
+        WHEN 'Thursday_1' THEN 4
+        WHEN 'Friday_1' THEN 5
+        WHEN 'Saturday_1' THEN 6
+        WHEN 'Monday_2' THEN 1
+        WHEN 'Tuesday_2' THEN 2
+        WHEN 'Wednesday_2' THEN 3
+        WHEN 'Thursday_2' THEN 4
+        WHEN 'Friday_2' THEN 5
+        WHEN 'Saturday_2' THEN 6
+    END;
 
