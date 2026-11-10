@@ -74,17 +74,17 @@ INSERT INTO departments_working_more_8_hours (
     department_functions
 )
 SELECT
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    d.department_code,
-    d.name,
-    d.serves_individuals,
-    d.serves_legal_entities,
-    d.department_functions
+     post_office_code,
+    day_of_week,
+    start_time,
+    end_time,
+    break_start_time,
+    break_end_time,
+    department_code,
+    department_name,
+    serves_individuals,
+    serves_legal_entities,
+    department_functions
 FROM departments d
 WHERE d.name ~ '\s+'
 AND NOT EXISTS (
